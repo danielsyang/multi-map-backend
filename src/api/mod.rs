@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, env};
 
 use axum::{
     extract::{Query, State},
@@ -10,12 +10,12 @@ use axum::{
 use validator::Validate;
 
 use crate::AppState;
-// https://places.googleapis.com/v1/places/ChIJj61dQgK6j4AR4GeTYWZsKWw?fields=id,displayName&key=AIzaSyCx5GIIXYLifYXU-BFr_oY6hdAUgDd_0k0
+// https://places.googleapis.com/v1/places/ChIJj61dQgK6j4AR4GeTYWZsKWw?fields=id,displayName&key=KEY
 
 // curl -X POST -d '{
 //     "textQuery" : "Spicy Vegetarian Food in Sydney, Australia"
 //   }' \
-//   -H 'Content-Type: application/json' -H 'X-Goog-Api-Key: AIzaSyCx5GIIXYLifYXU-BFr_oY6hdAUgDd_0k0' \
+//   -H 'Content-Type: application/json' -H 'X-Goog-Api-Key: KEY' \
 //   -H 'X-Goog-FieldMask: places.displayName,places.formattedAddress,places.priceLevel' \
 //   'https://places.googleapis.com/v1/places:searchText'
 
@@ -26,7 +26,6 @@ const GOOGLE_FIELD_MASK_HEADER: &str = "X-Goog-FieldMask";
 const FIELD_MASK: &str = "places.displayName,places.formattedAddress";
 
 const GOOGLE_API_KEY_HEADER: &str = "X-Goog-Api-Key";
-const API_KEY: &str = "AIzaSyCx5GIIXYLifYXU-BFr_oY6hdAUgDd_0k0";
 
 const GOOGLE_URL: &str = "https://places.googleapis.com/v1/places:searchText";
 
@@ -68,6 +67,8 @@ pub async fn get_places(
         return (StatusCode::BAD_REQUEST, "Invalid request").into_response();
     }
 
+    let key = env::var("GOOGLE_PLACES_KEY").expect("No GOOGLE_PLACES_KEY found.");
+
     let mut map = HashMap::new();
     map.insert("textQuery", p.text_query);
 
@@ -77,7 +78,7 @@ pub async fn get_places(
         .json(&map)
         .header(GOOGLE_FIELD_MASK_HEADER, FIELD_MASK)
         .header(CONTENT_TYPE, JSON_TYPE)
-        .header(GOOGLE_API_KEY_HEADER, API_KEY)
+        .header(GOOGLE_API_KEY_HEADER, key)
         .send()
         .await;
 

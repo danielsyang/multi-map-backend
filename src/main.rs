@@ -2,9 +2,9 @@ mod api;
 
 use api::get_places;
 use axum::{http::StatusCode, routing::get, Router};
+use dotenvy::dotenv;
 use reqwest::Client;
 use tower_http::trace::TraceLayer;
-
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt};
 
 fn context() -> Client {
@@ -18,6 +18,8 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
+    dotenv().expect(".env file not found");
+
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {

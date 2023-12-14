@@ -1003,6 +1003,7 @@ name = "multi-map-backend"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "dotenvy",
  "reqwest",
  "serde",
  "serde_json",
