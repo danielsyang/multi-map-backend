@@ -178,10 +178,11 @@ pub struct GetRoutesReponse {
     routes: Vec<RoutesResponse>,
 }
 
-pub async fn get_route(
+pub async fn get_routes(
     State(s): State<AppState>,
     Json(body): Json<GetRouteRequestBody>,
 ) -> impl IntoResponse {
+    println!("body: {:?}", body);
     let req = json!({
         "origin":{
             "location":{

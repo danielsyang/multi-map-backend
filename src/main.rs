@@ -2,7 +2,7 @@ mod api;
 
 use std::env;
 
-use api::{get_places, get_route};
+use api::{get_places, get_routes};
 use axum::{
     http::StatusCode,
     routing::{get, post},
@@ -45,7 +45,7 @@ async fn main() {
     let router = Router::new()
         .route("/health-check", get(|| async { (StatusCode::OK, "OK") }))
         .route("/places", post(get_places))
-        .route("/routes", post(get_route))
+        .route("/routes", post(get_routes))
         .with_state(state)
         .layer(TraceLayer::new_for_http());
 
