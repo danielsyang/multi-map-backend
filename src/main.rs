@@ -1,7 +1,11 @@
 mod api;
 
-use api::get_places;
-use axum::{http::StatusCode, routing::get, Router};
+use api::{get_places, get_route};
+use axum::{
+    http::StatusCode,
+    routing::{get, post},
+    Router,
+};
 use dotenvy::dotenv;
 use reqwest::Client;
 use tower_http::trace::TraceLayer;
@@ -34,7 +38,8 @@ async fn main() {
     };
     let router = Router::new()
         .route("/health-check", get(|| async { (StatusCode::OK, "OK") }))
-        .route("/places", get(get_places))
+        .route("/places", post(get_places))
+        .route("/routes", post(get_route))
         .with_state(state)
         .layer(TraceLayer::new_for_http());
 

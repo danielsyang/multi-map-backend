@@ -13,21 +13,21 @@ use crate::AppState;
 // https://places.googleapis.com/v1/places/ChIJj61dQgK6j4AR4GeTYWZsKWw?fields=id,displayName&key=KEY
 
 // curl -X POST -d '{
-//     "textQuery" : "Spicy Vegetarian Food in Sydney, Australia"
+//     "textQuery" : "Spicy Vegetarian Food in Sydney, Australia",
+//     "maxResultCount": "10"
 //   }' \
 //   -H 'Content-Type: application/json' -H 'X-Goog-Api-Key: KEY' \
-//   -H 'X-Goog-FieldMask: places.displayName,places.formattedAddress,places.priceLevel' \
+//   -H 'X-Goog-FieldMask: places.id,places.displayName,places.formattedAddress,places.location' \
 //   'https://places.googleapis.com/v1/places:searchText'
 
 const CONTENT_TYPE: &str = "Content-type";
 const JSON_TYPE: &str = "application/json";
-
 const GOOGLE_FIELD_MASK_HEADER: &str = "X-Goog-FieldMask";
-const FIELD_MASK: &str = "places.displayName,places.formattedAddress";
-
+const FIELD_MASK: &str = "places.id,places.displayName,places.formattedAddress,places.location";
 const GOOGLE_API_KEY_HEADER: &str = "X-Goog-Api-Key";
-
 const GOOGLE_URL: &str = "https://places.googleapis.com/v1/places:searchText";
+const MAX_RESULT_COUNT_KEY: &str = "maxResultCount";
+const MAX_RESULT_COUNT_VALUE: &str = "10";
 
 #[derive(Debug, Deserialize, Serialize)]
 struct DisplayName {
@@ -37,23 +37,31 @@ struct DisplayName {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+struct Location {
+    latitude: f32,
+    longitude: f32,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 struct GooglePlace {
+    id: String,
     #[serde(rename = "formattedAddress")]
     formatted_address: String,
     #[serde(rename = "priceLevel")]
     price_level: Option<String>,
     #[serde(rename = "displayName")]
     display_name: DisplayName,
+    location: Location,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 struct GooglePlacesReponse {
-    places: Vec<GooglePlace>,
+    places: Option<Vec<GooglePlace>>,
 }
 
 #[derive(Deserialize, Validate)]
 pub struct GooglePlacesRequest {
-    #[validate(length(min = 5), does_not_contain = "undefined")]
+    #[validate(does_not_contain = "undefined")]
     text_query: String,
 }
 
@@ -67,11 +75,23 @@ pub async fn get_places(
         return (StatusCode::BAD_REQUEST, "Invalid request").into_response();
     }
 
-    let key = env::var("GOOGLE_PLACES_KEY").expect("No GOOGLE_PLACES_KEY found.");
+    let key = match env::var("GOOGLE_PLACES_KEY") {
+        Ok(key) => key,
+        Err(e) => {
+            println!("No GOOGLE_PLACES_KEY found. {}", e);
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Something went wrong. Try again later",
+            )
+                .into_response();
+        }
+    };
 
     let mut map = HashMap::new();
     map.insert("textQuery", p.text_query);
+    map.insert(MAX_RESULT_COUNT_KEY, MAX_RESULT_COUNT_VALUE.into());
 
+    // We should add locationBias https://developers.google.com/maps/documentation/places/web-service/text-search#location-bias
     let request = s
         .client_reqwest
         .post(GOOGLE_URL)
@@ -104,3 +124,5 @@ pub async fn get_places(
         }
     }
 }
+
+pub async fn get_route() -> impl IntoResponse {}
