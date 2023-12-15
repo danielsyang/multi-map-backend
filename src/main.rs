@@ -1,5 +1,7 @@
 mod api;
 
+use std::env;
+
 use api::{get_places, get_route};
 use axum::{
     http::StatusCode,
@@ -18,11 +20,14 @@ fn context() -> Client {
 #[derive(Clone)]
 pub struct AppState {
     client_reqwest: Client,
+    google_key: String,
 }
 
 #[tokio::main]
 async fn main() {
     dotenv().expect(".env file not found");
+
+    let google_key = env::var("GOOGLE_PLACES_KEY").expect(".env file not found");
 
     tracing_subscriber::registry()
         .with(
@@ -35,6 +40,7 @@ async fn main() {
 
     let state = AppState {
         client_reqwest: context(),
+        google_key,
     };
     let router = Router::new()
         .route("/health-check", get(|| async { (StatusCode::OK, "OK") }))
